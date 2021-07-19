@@ -1,20 +1,18 @@
-try {
-    import * as THREE from './three.js-master/build/three.module.js';
-    import {EffectComposer} from './three.js-master/examples/jsm/postprocessing/EffectComposer.js';
-    import {RenderPass} from './three.js-master/examples/jsm/postprocessing/RenderPass.js';
-    import {UnrealBloomPass} from './three.js-master/examples/jsm/postprocessing/UnrealBloomPass.js';
-    import { ShaderPass } from './three.js-master/examples/jsm/postprocessing/ShaderPass.js';
-    import {OrbitControls} from './three.js-master/examples/jsm/controls/OrbitControls.js';
-    import {GLTFLoader} from './three.js-master/examples/jsm/loaders/GLTFLoader.js';
-} catch(error) {
-    import * as THREE from 'https://threejsfundamentals.org/threejs/resources/threejs/r127/build/three.module.js';
-    import {EffectComposer} from 'https://threejsfundamentals.org/threejs/resources/threejs/r127/examples/jsm/postprocessing/EffectComposer.js';
-    import {RenderPass} from 'https://threejsfundamentals.org/threejs/resources/threejs/r127/examples/jsm/postprocessing/RenderPass.js';
-    import {UnrealBloomPass} from 'https://threejsfundamentals.org/threejs/resources/threejs/r127/examples/jsm/postprocessing/UnrealBloomPass.js';
-    import {OrbitControls} from 'https://threejsfundamentals.org/threejs/resources/threejs/r127/examples/jsm/controls/OrbitControls.js';
-    import {GLTFLoader} from 'https://threejsfundamentals.org/threejs/resources/threejs/r127/examples/jsm/loaders/GLTFLoader.js';
-}
+import * as THREE from 'https://threejsfundamentals.org/threejs/resources/threejs/r127/build/three.module.js';
+import {EffectComposer} from 'https://threejsfundamentals.org/threejs/resources/threejs/r127/examples/jsm/postprocessing/EffectComposer.js';
+import {RenderPass} from 'https://threejsfundamentals.org/threejs/resources/threejs/r127/examples/jsm/postprocessing/RenderPass.js';
+import {UnrealBloomPass} from 'https://threejsfundamentals.org/threejs/resources/threejs/r127/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { ShaderPass } from 'https://threejsfundamentals.org/threejs/resources/threejs/r127/examples/jsm/postprocessing/ShaderPass.js';
+import {OrbitControls} from 'https://threejsfundamentals.org/threejs/resources/threejs/r127/examples/jsm/controls/OrbitControls.js';
+import {GLTFLoader} from 'https://threejsfundamentals.org/threejs/resources/threejs/r127/examples/jsm/loaders/GLTFLoader.js';
 
+// import * as THREE from './three.js-master/build/three.module.js';
+// import {EffectComposer} from './three.js-master/examples/jsm/postprocessing/EffectComposer.js';
+// import {RenderPass} from './three.js-master/examples/jsm/postprocessing/RenderPass.js';
+// import {UnrealBloomPass} from './three.js-master/examples/jsm/postprocessing/UnrealBloomPass.js';
+// import { ShaderPass } from './three.js-master/examples/jsm/postprocessing/ShaderPass.js';
+// import {OrbitControls} from './three.js-master/examples/jsm/controls/OrbitControls.js';
+// import {GLTFLoader} from './three.js-master/examples/jsm/loaders/GLTFLoader.js';
 
 const BASE_LAYER = 0;
 const GLOW_LAYER = 1;
