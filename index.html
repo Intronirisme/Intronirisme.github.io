@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- <meta name="reality"> -->
+    <title>Document</title>
+    <link rel="stylesheet" href="/static/css/index.css">
+</head>
+<body>
+    <intro-world>
+        <intro-skybox
+            front='static/img/space_ft.png'
+            back='static/img/space_bk.png'
+            right='static/img/space_rt.png'
+            left='static/img/space_lf.png'
+            top='static/img/space_up.png'
+            down='static/img/space_dn.png'></intro-skybox>
+            <light-ambient color="0xffffff" intensity="1"></light-ambient>
+        <intro-sun radius=50>
+            <light-point color='0xffffff' intensity='20'></light-point>
+        </intro-sun>
+
+        <intro-gltf src="static/gltf/planet_test.glb" position="-250 0 0"></intro-gltf>
+    </intro-world>
+
+    <script type="x-shader/x-vertex" id="vertexshader">
+
+        varying vec2 vUv;
+
+        void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+        }
+    </script>
+
+    <script type="x-shader/x-fragment" id="fragmentshader">
+
+        uniform sampler2D baseTexture;
+        uniform sampler2D bloomTexture;
+
+        varying vec2 vUv;
+
+        void main() {
+            gl_FragColor = ( texture2D( baseTexture, vUv ) + vec4( 1.0 ) * texture2D( bloomTexture, vUv ) );
+        }
+    </script>
+    <script type="module" src="/static/js/component.js"></script>
+</body>
+</html>
