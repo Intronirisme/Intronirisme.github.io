@@ -38,6 +38,36 @@ class SceneNode extends HTMLElement {
     remove(elem) {
         this.root.remove(elem);
     }
+
+    attributeChangedCallback(name, oldValue, newValue) {
+        if(this.root !== null) {
+            console.log('Scene Node attribute changed');
+            switch(name) {
+                case 'position':
+                    let newPos = newValue.split(' ');
+                    if(!isNaN(+newPos[0]) || !isNaN(+newPos[1] || !isNaN(+newPos[2]))) {
+                        this.root.position.set(+newPos[0], +newPos[1], +newPos[2]);
+                    }
+                    break;
+
+                case 'rotation':
+                    let newRot = newValue.split(' ');
+                    if(!isNaN(+newRot[0]) || !isNaN(+newRot[1] || !isNaN(+newRot[2]))) {
+                        this.root.rotation.set(+newRot[0], +newRot[1], +newRot[2]);
+                    }
+                    break;
+                
+                case 'scale':
+                    let newScl = newValue.split(' ');
+                    if(!isNaN(+newScl[0]) || !isNaN(+newScl[1] || !isNaN(+newScl[2]))) {
+                        this.root.scale.set(+newScl[0], +newScl[1], +newScl[2]);
+                    }
+                    break;
+            }
+        }
+    }
+
+    static get observedAttributes() {return ['position', 'rotation', 'scale'];}
 }
 
 class Test extends SceneNode {
@@ -62,6 +92,7 @@ class World extends SceneNode {
         super();
         this.shadow = this.attachShadow({mode: 'open'});
         this.materials = {};
+        this.background = null;
     }
     
     connectedCallback() {
@@ -142,8 +173,10 @@ class World extends SceneNode {
     
     render() {
         this.root.traverse( this.darkenNonBloomed.bind(this) );
+        this.root.background = null;
         this.bloomComposer.render();
         this.root.traverse( this.restoreMaterial.bind(this) );
+        this.root.background = this.background;
         this.finalComposer.render();
     }
 
@@ -159,6 +192,10 @@ class World extends SceneNode {
             obj.material = this.materials[ obj.uuid ];
             delete this.materials[ obj.uuid ];
         }
+    }
+
+    setBackground(cubemap) {
+        this.background = cubemap;
     }
 }
 
@@ -226,6 +263,15 @@ class Planet extends SceneNode {
     }
 
     connectedCallback() {
+        super.connectedCallback();
+        this.orbitRadius = this.hasAttribute('radius') ? +this.getAttribute('radius') : 404;
+        this.speed = this.hasAttribute('speed') ? +this.getAttribute('speed') : 60;
+        this.offset = this.hasAttribute('offset') ? +this.getAttribute('offset') : 0;
+        this.root.onBeforeRender = this.update;
+    }
+
+    update() {
+        let X = Math.cos;
     }
 }
 
@@ -251,7 +297,7 @@ class SkyBox extends HTMLElement {
                     this.getAttribute('left'),
                 ]);
                 this.cubemap.encoding = THREE.sRGBEncoding;
-                this.parentNode.root.background = this.cubemap;
+                this.parentNode.setBackground(this.cubemap);
         }
     }
 }
@@ -266,6 +312,28 @@ class Light extends SceneNode {
         this.intensity = this.hasAttribute('instensity') ? +this.getAttribute('intensity') : 1;
         this.intensity = isNaN(this.intensity) ? 1 : this.intensity;
     }
+    
+    attributeChangedCallback(name, oldValue, newValue) {
+        super.attributeChangedCallback(name, oldValue, newValue);
+        if(this.root !== null) {
+            console.log('Light attribute changed');
+            switch(name) {
+                case 'color':
+                    this.color = isNaN(+newValue) ? this.color : +newValue;
+                    console.log('color changed to ' + this.color);
+                    this.root.color.set(this.color);
+                    break;
+                    
+                case 'intensity':
+                    this.intensity = isNaN(+newValue) ? this.intensity : +newValue;
+                    console.log('intentsity changed to ' + this.intensity);
+                    this.root.intensity = this.intensity;
+                    break;
+            }
+        }
+    }
+
+    static get observedAttributes() {return ['position', 'rotation', 'scale', 'color', 'intensity'];}
 }
 
 customElements.define('test-light', Light);
@@ -279,26 +347,6 @@ class AmbientLight extends Light {
         this.root = new THREE.AmbientLight(this.color, this.intensity);
         this.parentNode.add(this.root);
     }
-    
-    attributeChangedCallback(name, oldValue, newValue) {
-        if(this.root !== null) {
-            switch(name) {
-                case 'color':
-                    this.color = isNaN(+newValue) ? this.color : +newValue;
-                    console.log('color changed to ' + this.color);
-                    this.root.color.set(this.color);
-                    break;
-    
-                case 'intensity':
-                    this.intensity = isNaN(+newValue) ? this.intensity : +newValue;
-                    console.log('intentsity changed to ' + this.intensity);
-                    this.root.intensity = this.intensity;
-                    break;
-            }
-        }
-    }
-    
-    static get observedAttributes() {return ['color', 'intensity']; }
 }
 
 customElements.define('light-ambient', AmbientLight);
@@ -316,6 +364,28 @@ class PointLight extends Light {
         this.root = new THREE.PointLight(this.color, this.intensity, this.distance, this.decay);
         this.parentNode.add(this.root);
     }
+
+    attributeChangedCallback(name, oldValue, newValue) {
+        super.attributeChangedCallback(name, oldValue, newValue);
+        if(this.root !== null) {
+            console.log('Point Light attribute changed');
+            switch(name) {
+                case 'distance':
+                    this.distance = isNaN(+newValue) ? this.distance : +newValue;
+                    console.log('distance changed to ' + this.distance);
+                    this.root.distance = this.distance;
+                    break;
+                    
+                case 'decay':
+                    this.decay = isNaN(+newValue) ? this.decay : +newValue;
+                    console.log('decay changed to ' + this.decay);
+                    this.root.decay = this.decay;
+                    break;
+            }
+        }
+    }
+
+    static get observedAttributes() {return ['position', 'rotation', 'scale', 'color', 'intensity', 'distance', 'decay'];}
 }
 
 customElements.define('light-point', PointLight);
