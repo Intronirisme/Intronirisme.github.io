@@ -29,19 +29,11 @@ class SceneNode extends HTMLElement {
     constructor() {
         super();
         this.root = null;
+        this.world = null;
     }
     
-    add(elem) {
-        this.root.add(elem);
-    }
-    
-    remove(elem) {
-        this.root.remove(elem);
-    }
-
     attributeChangedCallback(name, oldValue, newValue) {
         if(this.root !== null) {
-            console.log('Scene Node attribute changed');
             switch(name) {
                 case 'position':
                     let newPos = newValue.split(' ');
@@ -49,13 +41,13 @@ class SceneNode extends HTMLElement {
                         this.root.position.set(+newPos[0], +newPos[1], +newPos[2]);
                     }
                     break;
-
-                case 'rotation':
-                    let newRot = newValue.split(' ');
-                    if(!isNaN(+newRot[0]) || !isNaN(+newRot[1] || !isNaN(+newRot[2]))) {
-                        this.root.rotation.set(+newRot[0], +newRot[1], +newRot[2]);
-                    }
-                    break;
+                    
+                    case 'rotation':
+                        let newRot = newValue.split(' ');
+                        if(!isNaN(+newRot[0]) || !isNaN(+newRot[1] || !isNaN(+newRot[2]))) {
+                            this.root.rotation.set(+newRot[0], +newRot[1], +newRot[2]);
+                        }
+                        break;
                 
                 case 'scale':
                     let newScl = newValue.split(' ');
@@ -63,11 +55,20 @@ class SceneNode extends HTMLElement {
                         this.root.scale.set(+newScl[0], +newScl[1], +newScl[2]);
                     }
                     break;
+                }
             }
         }
-    }
-
-    static get observedAttributes() {return ['position', 'rotation', 'scale'];}
+        
+        static get observedAttributes() {return ['position', 'rotation', 'scale'];}
+        
+        add(elem) {
+            this.root.add(elem);
+            return this.world;
+        }
+        
+        remove(elem) {
+            this.root.remove(elem);
+        }
 }
 
 class Test extends SceneNode {
@@ -96,6 +97,9 @@ class World extends SceneNode {
     }
     
     connectedCallback() {
+        //GLOBAL CLOCK FOR ALL CHILDREN
+        this.clock = new THREE.Clock();
+
         //SCENE
         this.root = new THREE.Scene();
         
@@ -109,11 +113,12 @@ class World extends SceneNode {
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap; // default THREE.PCFShadowMap
-        this.renderer.outputEncoding = THREE.GammaEncoding;
+        this.renderer.outputEncoding = THREE.sRGBEncoding;
+        this.renderer.gammaFactor = 2.2;
         this.renderer.autoClear = false;
         window.addEventListener( 'resize', this.windowResize.bind(this), false );
         this.shadow.appendChild(this.renderer.domElement);
-
+        
         //POST-PROCESSING COMPOSER FOR GLOWING ELEMENTS
         this.renderPass = new RenderPass(this.root, this.camera);
         
@@ -121,12 +126,12 @@ class World extends SceneNode {
         this.bloomPass.threshold = 0;
         this.bloomPass.strength = 3;
         this.bloomPass.radius = 0;
-
+        
         this.bloomComposer = new EffectComposer(this.renderer);
         this.bloomComposer.renderToScreen = false;
         this.bloomComposer.addPass(this.renderPass);
         this.bloomComposer.addPass(this.bloomPass);
-
+        
         this.finalPass = new ShaderPass(
             new THREE.ShaderMaterial( {
                 uniforms: {
@@ -197,6 +202,11 @@ class World extends SceneNode {
     setBackground(cubemap) {
         this.background = cubemap;
     }
+
+    add(elem) {
+        super.add(elem);
+        return this;
+    }
 }
 
 customElements.define("intro-world", World);
@@ -214,7 +224,7 @@ class Sun extends SceneNode {
         this.root = new THREE.Mesh(this.sphere, this.material);
         this.root.layers.toggle(GLOW_LAYER);
 
-        this.parentNode.add(this.root);
+        this.world = this.parentNode.add(this.root);
     }
 }
 
@@ -229,53 +239,71 @@ class GLTFmodel extends SceneNode {
         let posAttr = this.hasAttribute('position') ? this.getAttribute('position') : '0 0 0';
         this.position = [ +posAttr.split(' ')[0], +posAttr.split(' ')[1], +posAttr.split(' ')[2] ];
         if (this.hasAttribute('src')) {
-            loader.load(this.getAttribute('src'),
-                
-                function( gltf ) {
-                    gltf.scene.traverse(function(obj) {
-                        if(obj.type === "Mesh") {
-                            obj.castShadow = true;
-                            // obj.material = new THREE.MeshBasicMaterial({color: 0xFF0000});
-                        }
-                    });
+            let loadingModel = new Promise((resolve, reject) => {
+                loader.load(this.getAttribute('src'),
                     
-                    this.root = gltf.scene;
-                    this.root.position.set(this.position[0], this.position[1], this.position[2]);
-                    this.parentNode.add(this.root);
-                }.bind(this),
+                    function( gltf ) {
+                        gltf.scene.traverse(function(obj) {
+                            if(obj.type === "Mesh") {
+                                obj.castShadow = true;
+                                // obj.material = new THREE.MeshBasicMaterial({color: 0xFF0000});
+                            }
+                        });
+                        this.root = gltf.scene;
+                        this.root.position.set(this.position[0], this.position[1], this.position[2]);
+                        this.world = this.parentNode.add(this.root);
+                        this.modelLoaded();
                 
-                function( xhr ) {
-                    console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
-                },
-                
-                function( error ) {
-                    console.log('error while loading : ' + this.getAttribute('src'));
-                });
+                    }.bind(this),
+                    
+                    function( xhr ) {
+                        console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
+                    },
+                    
+                    function( error ) {
+                        reject('error while loading : ' + this.getAttribute('src'));
+                    }
+                );
+            });
         }
+    }
+
+    modelLoaded() {
+        // this.root.onBeforeRender = function() {console.log('running');}; //example
+        return; //override in childrens
     }
 }
 
 customElements.define("intro-gltf", GLTFmodel);
 
-class Planet extends SceneNode {
+class Planet extends GLTFmodel {
     constructor() {
         super();
     }
 
     connectedCallback() {
         super.connectedCallback();
-        this.orbitRadius = this.hasAttribute('radius') ? +this.getAttribute('radius') : 404;
-        this.speed = this.hasAttribute('speed') ? +this.getAttribute('speed') : 60;
+        this.orbitRadius = this.hasAttribute('orbit-radius') ? +this.getAttribute('orbit-radius') : 404;
+        this.speed = this.hasAttribute('speed') ? +this.getAttribute('speed') : 20;
         this.offset = this.hasAttribute('offset') ? +this.getAttribute('offset') : 0;
-        this.root.onBeforeRender = this.update;
+        this.progresssion = this.offset;
     }
-
+    
     update() {
-        let X = Math.cos;
+        this.progresssion = (this.world.clock.getElapsedTime() + this.offset) % this.speed;
+        let angle = (this.progresssion / this.speed) * 2*Math.PI; //convert the progression in radians
+        let X = Math.cos(angle) * this.orbitRadius;
+        let Y = Math.sin(angle) * this.orbitRadius;
+        this.root.position.set(X, 0, Y);
+    }
+    
+    modelLoaded() {
+        this.root.position.set(0, 0, 0);
+        this.root.children[0].onBeforeRender = this.update.bind(this);
     }
 }
 
-
+customElements.define('intro-planet', Planet);
 
 class SkyBox extends HTMLElement {
     constructor() {
@@ -316,7 +344,6 @@ class Light extends SceneNode {
     attributeChangedCallback(name, oldValue, newValue) {
         super.attributeChangedCallback(name, oldValue, newValue);
         if(this.root !== null) {
-            console.log('Light attribute changed');
             switch(name) {
                 case 'color':
                     this.color = isNaN(+newValue) ? this.color : +newValue;
@@ -345,7 +372,7 @@ class AmbientLight extends Light {
     
     connectedCallback() {
         this.root = new THREE.AmbientLight(this.color, this.intensity);
-        this.parentNode.add(this.root);
+        this.world = this.parentNode.add(this.root);
     }
 }
 
@@ -362,13 +389,12 @@ class PointLight extends Light {
 
     connectedCallback() {
         this.root = new THREE.PointLight(this.color, this.intensity, this.distance, this.decay);
-        this.parentNode.add(this.root);
+        this.world = this.parentNode.add(this.root);
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
         super.attributeChangedCallback(name, oldValue, newValue);
         if(this.root !== null) {
-            console.log('Point Light attribute changed');
             switch(name) {
                 case 'distance':
                     this.distance = isNaN(+newValue) ? this.distance : +newValue;
