@@ -22,7 +22,7 @@
             <light-point color='0xffffff' intensity='5'></light-point>
         </intro-sun>
 
-        <intro-planet src="static/gltf/planet_test.glb" speed="15" orbit-radius="250"></intro-planet>
+        <intro-planet src="static/gltf/planet_test.glb" speed="15" orbit-radius="250" movefct='orbit'></intro-planet>
     </intro-world>
 
     <script type="x-shader/x-vertex" id="vertexshader">
@@ -46,6 +46,8 @@
             gl_FragColor = ( texture2D( baseTexture, vUv ) + vec4( 1.0 ) * texture2D( bloomTexture, vUv ) );
         }
     </script>
+
+    <script type="text/javascript" src="/static/js/index.js"></script>
     <script type="module" src="/static/js/component.js"></script>
 </body>
 </html>

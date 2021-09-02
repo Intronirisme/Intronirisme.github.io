@@ -287,6 +287,9 @@ class Planet extends GLTFmodel {
         this.speed = this.hasAttribute('speed') ? +this.getAttribute('speed') : 20;
         this.offset = this.hasAttribute('offset') ? +this.getAttribute('offset') : 0;
         this.progresssion = this.offset;
+        this.movefct = this.hasAttribute('movefct') ? this.getAttribute('movefct') + '()' : null;
+        console.log(this.movefct);
+        eval(this.movefct);
     }
     
     update() {
